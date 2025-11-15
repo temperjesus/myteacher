@@ -1,99 +1,124 @@
-import { Component } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { RouterModule, Router } from '@angular/router';
+// src/app/pages/tutor-dashboard/tutor-dashboard.component.ts
 
-// Este tipo describe cada fila de la tabla de tutorías
-export interface TutoriaProgramada {
-  materia: string;          // ej. "Matemáticas Avanzadas"
-  detalle: string;          // ej. "Temáticas avanzadas"
-  hora: string;             // ej. "10:00 AM"
-  horaExtra?: string;       // ej. "15-03-2024"
-  fecha: string;            // ej. "02/9/25"
-  duracionHoras: number;    // ej. 2
-}
+import { CommonModule } from '@angular/common';
+import { Component, OnDestroy, OnInit } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { Router, RouterModule } from '@angular/router';
+import { Subscription } from 'rxjs';
+import { Offer, OfferStatus } from '../../core/models/offer.model';
+import { OfferService } from '../../core/services/offer.service';
+import {
+  NotificationItem,
+  NotificationService,
+} from '../../core/services/notification.service';
+
+type FiltroEstado = 'Todos' | OfferStatus;
 
 @Component({
   selector: 'app-tutor-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, FormsModule, RouterModule],
   templateUrl: './tutor-dashboard.component.html',
   styleUrls: ['./tutor-dashboard.component.scss'],
 })
-export class TutorDashboardComponent {
-  // Métricas del resumen (las cards de arriba)
-  clasesCompletadas = 15;
-  deltaClasesMes = 15;
+export class TutorDashboardComponent implements OnInit, OnDestroy {
+  tutorId = 'tutor-01'; // luego vendrá del usuario logueado
+  tutorName = 'Dra. Elara Vance';
 
-  horasTutoria = 18;
-  horasUltimaSemana = 10.5;
+  // formulario de nueva oferta
+  nueva: {
+    subject: string;
+    mode: 'Virtual' | 'Presencial';
+    pricePerHour: number;
+    hours: number;
+  } = {
+    subject: '',
+    mode: 'Virtual',
+    pricePerHour: 0,
+    hours: 1,
+  };
 
-  // Tabla de tutorías programadas
-  tutorias: TutoriaProgramada[] = [
-    {
-      materia: 'Matemáticas Avanzadas',
-      detalle: 'Temáticas avanzadas',
-      hora: '10:00 AM',
-      horaExtra: '15-03-2024',
-      fecha: '02/9/25',
-      duracionHoras: 2,
-    },
-    {
-      materia: 'Física Cuántica',
-      detalle: 'Clásica → Cuántica',
-      hora: '11:30 AM',
-      horaExtra: '15-03-2024',
-      fecha: '12/9/25',
-      duracionHoras: 1,
-    },
-    {
-      materia: 'Química Orgánica',
-      detalle: 'Estructuras y reacciones',
-      hora: '09:00 AM',
-      horaExtra: '16-03-2024',
-      fecha: '22/9/25',
-      duracionHoras: 2,
-    },
-    {
-      materia: 'Programación Python',
-      detalle: 'Intro a Python',
-      hora: '02:00 PM',
-      horaExtra: '16-03-2024',
-      fecha: '02/10/25',
-      duracionHoras: 1,
-    },
-    {
-      materia: 'Literatura Española',
-      detalle: 'Análisis textual',
-      hora: '04:00 PM',
-      horaExtra: '17-03-2024',
-      fecha: '15/10/25',
-      duracionHoras: 2,
-    },
-  ];
+  filtro: FiltroEstado = 'Todos';
 
-  constructor(private router: Router) {}
+  ofertas: Offer[] = [];
+  inbox: NotificationItem[] = [];
 
-  // Navega a la vista / formulario para crear una nueva tutoría
-  crearTutoria() {
-    console.log('→ crearTutoria()');
-    // idea: abre modal o navega a una ruta tipo /tutor/nueva-tutoria
-    // this.router.navigate(['/tutor/nueva-tutoria']);
-    alert('Aquí abrirías el formulario para crear una nueva tutoría 👨‍🏫');
+  private subOffers?: Subscription;
+  private subInbox?: Subscription;
+
+  constructor(
+    private router: Router,
+    private offersService: OfferService,
+    private notify: NotificationService
+  ) {}
+
+  ngOnInit(): void {
+    this.subOffers = this.offersService.offers$.subscribe((list) => {
+      this.ofertas = list.filter((o) => o.tutorId === this.tutorId);
+    });
+
+    this.subInbox = this.notify.inboxFor(this.tutorId).subscribe((list) => {
+      this.inbox = list;
+    });
   }
 
-  // Abre la "sala" o videollamada de esa tutoría
-  iniciarTutoria(clase: TutoriaProgramada) {
-    console.log('→ iniciarTutoria()', clase);
-    // idea: podría enviar al componente de videollamada con parámetros
-    // this.router.navigate(['/video-call'], { queryParams: { materia: clase.materia }});
+  ngOnDestroy(): void {
+    this.subOffers?.unsubscribe();
+    this.subInbox?.unsubscribe();
+  }
+
+  // KPI: horas reservadas
+  get totalHorasReservadas(): number {
+    return this.ofertas
+      .filter((o) => o.status === 'Reservada' || o.status === 'Pagada')
+      .reduce((acc, o) => acc + o.hours, 0);
+  }
+
+  getClasesFiltradas(): Offer[] {
+    if (this.filtro === 'Todos') return this.ofertas;
+    return this.ofertas.filter((o) => o.status === this.filtro);
+  }
+
+  publicarOferta(): void {
+    if (!this.nueva.subject.trim()) {
+      alert('Escribe una materia para la oferta.');
+      return;
+    }
+    if (this.nueva.pricePerHour <= 0) {
+      alert('La tarifa debe ser mayor que 0.');
+      return;
+    }
+    if (this.nueva.hours <= 0) {
+      alert('Las horas deben ser mayores que 0.');
+      return;
+    }
+
+    this.offersService.create({
+      tutorId: this.tutorId,
+      tutorName: this.tutorName,
+      subject: this.nueva.subject.trim(),
+      mode: this.nueva.mode,
+      pricePerHour: this.nueva.pricePerHour,
+      hours: this.nueva.hours,
+      takenByStudentId: undefined,
+      takenByStudentName: undefined,
+    });
+
+    // limpiar formulario
+    this.nueva = {
+      subject: '',
+      mode: 'Virtual',
+      pricePerHour: 0,
+      hours: 1,
+    };
+  }
+
+  iniciar(o: Offer): void {
+    console.log('Iniciar tutoría para oferta', o);
     this.router.navigate(['/video-call']);
   }
 
-  // Cierra sesión y vuelve al login
-  logout() {
-    console.log('→ logout()');
-    // ejemplo básico:
-    // localStorage.removeItem('token');
+  logout(): void {
     this.router.navigate(['/login']);
   }
 }

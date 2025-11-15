@@ -1,36 +1,51 @@
-import { Component } from '@angular/core';
+// src/app/pages/student-dashboard/student-dashboard.component.ts
+import { Component, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router, RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { RouterModule } from '@angular/router';
+import { Subscription } from 'rxjs';
+import { Offer } from '../../core/models/offer.model';
+import { OfferService } from '../../core/services/offer.service';
+import { NotificationService } from '../../core/services/notification.service';
 
 @Component({
   selector: 'app-student-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterModule],
   templateUrl: './student-dashboard.component.html',
   styleUrls: ['./student-dashboard.component.scss'],
 })
-export class StudentDashboardComponent {
-  prompt = '';
+export class StudentDashboardComponent implements OnDestroy {
+  ofertas: Offer[] = [];
+  inboxSub?: Subscription;
+  studentId = 'student-001';
 
-  constructor(private router: Router) {}
-
-  logout() {
-    // Limpia sesión (ajusta si usas otro storage / token)
-    localStorage.removeItem('loggedUser');
-    localStorage.removeItem('role');
-    this.router.navigate(['/login']);
+  constructor(
+    public offers: OfferService,
+    private notify: NotificationService
+  ) {
+    this.offers.loadAll().subscribe((list) => (this.ofertas = list));
   }
 
-  sendMessage(e: Event) {
-    e.preventDefault();
-    if (!this.prompt.trim()) return;
-
-    alert('📤 Pregunta enviada a la IA: ' + this.prompt);
-    this.prompt = '';
+  reservar(offer: Offer): void {
+    const id = offer._id || offer.id!;
+    this.offers.reserveOffer(id, this.studentId, 'Juan Pérez').subscribe({
+      next: (o) => {
+        if (o) {
+          this.notify.push(
+            o.tutorId,
+            'Nueva reserva',
+            `El estudiante Juan Pérez reservó tu oferta de ${o.subject}.`
+          );
+          alert('Reserva realizada correctamente');
+        }
+      },
+      error: (err) =>
+        alert(err?.error?.message || 'Error al reservar la oferta'),
+    });
   }
 
-  quickAsk(text: string) {
-    this.prompt = text;
+  ngOnDestroy(): void {
+    this.inboxSub?.unsubscribe();
   }
 }

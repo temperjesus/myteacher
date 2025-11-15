@@ -1,181 +1,210 @@
-<div class="tutor-dashboard-shell">
-  <!-- SIDEBAR -->
+<div class="tutor-layout">
+  <!-- Sidebar simple -->
   <aside class="sidebar">
     <div class="brand">
-      my<i>TEACHER</i>
+      <span class="logo">myTEACHER</span>
     </div>
 
     <nav class="menu">
-      <a
-        class="menu-item"
-        routerLink="/tutor/dashboard"
-        routerLinkActive="active"
-        [routerLinkActiveOptions]="{ exact: true }"
-      >
-        <span>🏠</span>
-        <span>Inicio</span>
-      </a>
-
-      <a
-        class="menu-item"
-        routerLink="/tutor/calendar"
-        routerLinkActive="active"
-      >
-        <span>📅</span>
-        <span>Calendario</span>
-      </a>
-
-      <a
-        class="menu-item"
-        routerLink="/tutor/profile"
-        routerLinkActive="active"
-      >
-        <span>👤</span>
-        <span>Perfil</span>
-      </a>
+      <a routerLink="/tutor/dashboard" routerLinkActive="active">Inicio</a>
+      <a routerLink="/tutor/calendar" routerLinkActive="active">Calendario</a>
+      <a routerLink="/tutor/profile" routerLinkActive="active">Perfil</a>
     </nav>
 
-    <div class="bottom-area">
-      <button class="bottom-link" type="button">
-        <span>⚙</span>
-        <span>Configuración</span>
-      </button>
-
-      <button
-        class="bottom-link logout"
-        type="button"
-        (click)="logout()"
-      >
-        <span>↩</span>
-        <span>Cerrar Sesión</span>
-      </button>
+    <div class="sidebar-bottom">
+      <button class="link" (click)="logout()">Cerrar Sesión</button>
     </div>
   </aside>
 
-  <!-- MAIN -->
-  <main class="main-area">
-    <!-- Título principal -->
-    <h1 class="page-title">Panel de Control del Tutor</h1>
+  <!-- Contenido principal -->
+  <div class="tutor-main">
+    <header class="page-header">
+      <h1>Panel de Control del Tutor</h1>
+      <p class="subtitle">
+        Gestiona tus ofertas, controla tus clases y recibe notificaciones de tus estudiantes.
+      </p>
+    </header>
 
-    <!-- Resumen -->
-    <section>
-      <h2 class="section-heading">Resumen de mis Clases</h2>
-
-      <div class="resume-row">
-        <!-- Tarjeta 1: Clases Completadas -->
+    <main class="page-content">
+      <!-- Resumen -->
+      <section class="stats-row">
         <div class="stat-card">
-          <div class="stat-header">
-            <span>Clases Completadas</span>
-            <span class="stat-icon">📋</span>
+          <div class="stat-label">Ofertas activas</div>
+          <div class="stat-value">{{ ofertas.length }}</div>
+          <div class="stat-subtext">
+            Publicadas por ti
           </div>
-
-          <p class="stat-value">
-            {{ clasesCompletadas }}
-          </p>
-
-          <p class="stat-subtext">
-            Último mes: +{{ deltaClasesMes }}
-          </p>
         </div>
 
-        <!-- Tarjeta 2: Horas de Tutoría -->
         <div class="stat-card">
-          <div class="stat-header">
-            <span>Horas de Tutoría</span>
-            <span class="stat-icon">🕒</span>
+          <div class="stat-label">Horas reservadas</div>
+          <div class="stat-value">{{ totalHorasReservadas }}</div>
+          <div class="stat-subtext">
+            Suma de las reservas actuales
+          </div>
+        </div>
+      </section>
+
+      <!-- Crear oferta -->
+      <section class="card card-offer-form">
+        <div class="card-header">
+          <h2>Crear nueva oferta</h2>
+          <p class="muted">Define la materia, modalidad, precio por hora y número de horas.</p>
+        </div>
+
+        <form class="offer-form" (ngSubmit)="publicarOferta()">
+          <div class="form-row">
+            <div class="form-control">
+              <label>Materia</label>
+              <input
+                type="text"
+                [(ngModel)]="nueva.subject"
+                name="subject"
+                placeholder="Ej: Cálculo diferencial"
+              />
+            </div>
+
+            <div class="form-control">
+              <label>Modalidad</label>
+              <select [(ngModel)]="nueva.mode" name="mode">
+                <option value="Virtual">Virtual</option>
+                <option value="Presencial">Presencial</option>
+              </select>
+            </div>
           </div>
 
-          <p class="stat-value">
-            {{ horasTutoria }}
-          </p>
+          <div class="form-row">
+            <div class="form-control">
+              <label>Precio por hora (COP)</label>
+              <input
+                type="number"
+                [(ngModel)]="nueva.pricePerHour"
+                name="pricePerHour"
+                min="0"
+              />
+            </div>
 
-          <p class="stat-subtext">
-            Última semana: ~{{ horasUltimaSemana }}h
-          </p>
+            <div class="form-control">
+              <label>Horas</label>
+              <input
+                type="number"
+                [(ngModel)]="nueva.hours"
+                name="hours"
+                min="1"
+                max="10"
+              />
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <button type="submit" class="btn primary">
+              Publicar oferta
+            </button>
+          </div>
+        </form>
+      </section>
+
+      <!-- Tabla de ofertas -->
+      <section class="card card-offers-table">
+        <div class="card-header">
+          <div>
+            <h2>Mis ofertas</h2>
+            <p class="muted">Administra tus clases publicadas.</p>
+          </div>
+
+          <div class="filters">
+            <label class="filter-label">
+              Filtro:
+              <select [(ngModel)]="filtro" class="filter-select">
+                <option value="Todos">Todas</option>
+                <option value="Disponible">Disponibles</option>
+                <option value="Reservada">Reservadas</option>
+                <option value="Pagada">Pagadas</option>
+                <option value="Cerrada">Cerradas</option>
+              </select>
+            </label>
+          </div>
         </div>
-      </div>
-    </section>
 
-    <!-- Tabla de Tutorías -->
-    <section class="tutorias-wrapper">
-      <div class="tutorias-table-card">
-        <header class="tutorias-header">
-          <h3 class="tutorias-title">Agregar Tutoría</h3>
-
-          <button
-            class="add-class-btn"
-            type="button"
-            (click)="crearTutoria()"
-            aria-label="Agregar nueva tutoría"
-          >
-            +
-          </button>
-        </header>
-
-        <table class="tutorias-table">
-          <thead>
+        <div class="table-wrapper">
+          <table class="table">
+            <thead>
             <tr>
-              <th>Asignatura</th>
-              <th>Hora</th>
-              <th>Fecha</th>
-              <th>Horas de Tutoría</th>
-              <th>Iniciar Tutoría</th>
+              <th>Materia</th>
+              <th>Modalidad</th>
+              <th>$ / h</th>
+              <th>Horas</th>
+              <th>Estado</th>
+              <th>Estudiante</th>
+              <th class="text-right">Acción</th>
             </tr>
-          </thead>
+            </thead>
 
-          <tbody>
-            <tr *ngFor="let clase of tutorias">
-              <!-- Asignatura -->
+            <tbody>
+            <tr *ngFor="let o of getClasesFiltradas()">
+              <td><strong>{{ o.subject }}</strong></td>
+              <td>{{ o.mode }}</td>
+              <td>{{ o.pricePerHour | number }}</td>
+              <td>{{ o.hours }}</td>
               <td>
-                <span class="subject-name">
-                  {{ clase.materia }}
-                </span>
-                <span class="subject-extra">
-                  {{ clase.detalle }}
-                </span>
+              <span
+                class="chip"
+                [class.available]="o.status === 'Disponible'"
+                [class.reserved]="o.status === 'Reservada'"
+                [class.done]="o.status === 'Pagada'"
+                [class.closed]="o.status === 'Cerrada'"
+              >
+                {{ o.status }}
+              </span>
               </td>
-
-              <!-- Hora -->
-              <td>
-                <span class="subject-name">
-                  {{ clase.hora }}
-                </span>
-                <span class="subject-extra">
-                  {{ clase.horaExtra }}
-                </span>
-              </td>
-
-              <!-- Fecha -->
-              <td>
-                {{ clase.fecha }}
-              </td>
-
-              <!-- Duración -->
-              <td>
-                {{ clase.duracionHoras }}
-              </td>
-
-              <!-- Acción -->
-              <td>
+              <td>{{ o.takenByStudentName || '—' }}</td>
+              <td class="text-right">
                 <button
-                  class="start-btn"
-                  type="button"
-                  (click)="iniciarTutoria(clase)"
+                  class="btn primary"
+                  [disabled]="o.status !== 'Reservada'"
+                  (click)="iniciar(o)"
                 >
                   Iniciar
                 </button>
               </td>
             </tr>
 
-            <!-- fallback si no hay tutorías -->
-            <tr *ngIf="tutorias?.length === 0">
-              <td colspan="5" style="color:#6b7280; font-size:13px; padding:24px;">
-                No tienes tutorías programadas.
+            <tr *ngIf="getClasesFiltradas().length === 0">
+              <td colspan="7" class="empty">
+                Aún no has publicado ofertas para este filtro.
               </td>
             </tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
-  </main>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Notificaciones -->
+      <section class="card card-notifications">
+        <div class="card-header">
+          <h2>Notificaciones</h2>
+        </div>
+
+        <ng-container *ngIf="inbox && inbox.length; else noNotif">
+          <ul class="inbox-list">
+            <li class="inbox-item" *ngFor="let n of inbox">
+              <div class="inbox-main">
+                <div class="inbox-title">{{ n.title || n.titulo }}</div>
+                <div class="inbox-body">
+                  {{ n.body || n.mensaje }}
+                </div>
+              </div>
+              <div class="inbox-meta">
+                {{ (n.date || n.fecha) | date:'short' }}
+              </div>
+            </li>
+          </ul>
+        </ng-container>
+
+        <ng-template #noNotif>
+          <div class="empty">Sin notificaciones.</div>
+        </ng-template>
+      </section>
+    </main>
+  </div>
 </div>

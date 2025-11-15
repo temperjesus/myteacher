@@ -1,0 +1,22 @@
+<div class="page" *ngIf="offer as o">
+  <h2>Checkout</h2>
+  <section class="card">
+    <h3>Resumen</h3>
+    <p><b>Materia:</b> {{ o.subject }} — <b>Tutor:</b> {{ o.tutorName }}</p>
+    <p><b>Tarifa:</b> {{ o.pricePerHour | number }} x {{ o.hours }}h</p>
+    <p><b>Subtotal:</b> {{ subtotal() | number }}</p>
+    <p><b>Comisión (2%):</b> {{ fee() | number }}</p>
+    <p><b>Total:</b> {{ total() | number }}</p>
+  </section>
+
+  <section class="card">
+    <h3>Pago con tarjeta</h3>
+    <div class="form-row"><label>Nombre</label><input [(ngModel)]="card.name"></div>
+    <div class="form-row"><label>Número</label><input [(ngModel)]="card.number"></div>
+    <div class="row-2">
+      <div class="form-row"><label>Exp</label><input [(ngModel)]="card.exp" placeholder="MM/AA"></div>
+      <div class="form-row"><label>CVV</label><input [(ngModel)]="card.cvv"></div>
+    </div>
+    <button class="btn" (click)="pay()">Pagar</button>
+  </section>
+</div>

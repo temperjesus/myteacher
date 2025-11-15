@@ -1,29 +1,34 @@
 import { Component } from '@angular/core';
-import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
-import { AuthService } from '../../core/auth.service';
+import { FormsModule } from '@angular/forms';
+import { RouterModule, Router } from '@angular/router';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterModule],
   templateUrl: './login.component.html',
   styleUrls: ['./login.component.scss']
 })
 export class LoginComponent {
-  email = 'estudiante@myteacher.com';
-  password = '1234';
+
+  email = '';
+  password = '';
   role: 'estudiante' | 'tutor' = 'estudiante';
 
-  constructor(private auth: AuthService) {}
+  constructor(private router: Router) {}
 
-  onSubmit() {
-    if (this.role === 'tutor') {
-      this.email = 'tutor@myteacher.com';
-      this.password = 'abcd';
+  onSubmit(): void {
+    if (!this.email || !this.password) {
+      alert('Ingresa correo y contraseña');
+      return;
     }
 
-    const ok = this.auth.login(this.email, this.password);
-    if (!ok) alert('Credenciales incorrectas');
+    // Aquí luego llamaremos al AuthService contra tu API.
+    if (this.role === 'tutor') {
+      this.router.navigate(['/tutor/dashboard']);
+    } else {
+      this.router.navigate(['/student/dashboard']);
+    }
   }
 }

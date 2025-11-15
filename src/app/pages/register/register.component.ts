@@ -1,7 +1,8 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule, NgForm } from '@angular/forms';
+import { FormsModule } from '@angular/forms';
 import { RouterModule, Router } from '@angular/router';
+import { AuthService } from '../../core/services/auth.service';
 
 @Component({
   selector: 'app-register',
@@ -11,42 +12,52 @@ import { RouterModule, Router } from '@angular/router';
   styleUrls: ['./register.component.scss']
 })
 export class RegisterComponent {
-  role: 'tutor' | 'estudiante' = 'estudiante';
+  name = '';
   email = '';
   password = '';
   confirmPassword = '';
+  role: 'estudiante' | 'tutor' = 'estudiante';
+  studyLevel = '';
+  bio = '';
 
+  loading = false;
   errorMsg = '';
 
-  constructor(private router: Router) {}
+  constructor(private auth: AuthService, private router: Router) {}
 
-  setRole(value: 'tutor' | 'estudiante') {
-    this.role = value;
-  }
-
-  onSubmit(form: NgForm) {
+  onSubmit() {
     this.errorMsg = '';
-
-    if (form.invalid) {
-      this.errorMsg = 'Por favor completa todos los campos.';
+    if (!this.name || !this.email || !this.password) {
+      this.errorMsg = 'Completa todos los campos obligatorios.';
       return;
     }
-
     if (this.password !== this.confirmPassword) {
       this.errorMsg = 'Las contraseñas no coinciden.';
       return;
     }
 
-    // Aquí iría tu lógica real de signup (API / Firebase / etc)
-    alert(
-      `Registro exitoso 🎉\nRol: ${this.role}\nEmail: ${this.email}`
-    );
+    this.loading = true;
 
-    // Redirección según rol
-    if (this.role === 'estudiante') {
-      this.router.navigate(['/student/dashboard']);
-    } else {
-      this.router.navigate(['/tutor/dashboard']);
-    }
+    this.auth.register({
+      name: this.name,
+      email: this.email,
+      password: this.password,
+      role: this.role,
+      studyLevel: this.role === 'estudiante' ? this.studyLevel : undefined,
+      bio: this.role === 'tutor' ? this.bio : undefined,
+    }).subscribe({
+      next: res => {
+        this.loading = false;
+        if (res.user.role === 'tutor') {
+          this.router.navigate(['/tutor/dashboard']);
+        } else {
+          this.router.navigate(['/student/dashboard']);
+        }
+      },
+      error: err => {
+        this.loading = false;
+        this.errorMsg = err.error?.message || 'Error en el registro.';
+      }
+    });
   }
 }

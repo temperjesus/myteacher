@@ -1,195 +1,115 @@
-<div class="student-dashboard-shell">
-  <!-- SIDEBAR -->
+<div class="student-layout">
+  <!-- Sidebar -->
   <aside class="sidebar">
-    <div class="brand">
-      my<span>TEACHER</span>
-    </div>
+    <div class="logo">myTEACHER</div>
 
-    <nav class="menu">
-      <a
-        class="menu-item"
-        routerLink="/student/dashboard"
-        routerLinkActive="active"
-        [routerLinkActiveOptions]="{ exact: true }"
-      >
-        Inicio
-      </a>
-
-      <a
-        class="menu-item"
-        routerLink="/calendar"
-        routerLinkActive="active"
-      >
-        Calendario
-      </a>
-
-      <a
-        class="menu-item"
-        routerLink="/student/profile"
-        routerLinkActive="active"
-      >
-        Perfil
-      </a>
+    <nav>
+      <a class="nav-item active">Dashboard</a>
+      <a class="nav-item" routerLink="/student/profile">Mis Clases</a>
+      <a class="nav-item">Mensajes</a>
     </nav>
-
-    <div class="bottom-area">
-      <button class="logout-btn" (click)="logout()">
-        Cerrar Sesión
-      </button>
-    </div>
   </aside>
 
-  <!-- CONTENIDO PRINCIPAL -->
-  <main class="main-area">
-    <section class="page-header">
-      <h2>Dashboard del Estudiante</h2>
-    </section>
+  <!-- Contenido principal -->
+  <main class="main">
+    <header class="topbar">
+      <input type="search" placeholder="Search..." class="search-input">
+      <div class="user-icon">
+        {{ auth.currentUser?.name | slice:0:1 }}
+      </div>
+    </header>
 
-    <div class="content-layout">
-      <!-- Columna izquierda -->
-      <div class="left-column">
-        <!-- Buscar tutor -->
-        <section class="card">
-          <h3>Encuentra un Tutor</h3>
-          <div class="search-row">
-            <input
-              class="input"
-              placeholder="Buscar por materias o palabras clave..."
-              type="text"
-            />
-            <button class="btn primary">Buscar</button>
-          </div>
-        </section>
+    <section class="dashboard-content">
+      <!-- Filtros -->
+      <div class="filters">
+        <h3>Filtra tu búsqueda</h3>
 
-        <!-- Tutorías Próximas -->
-        <section class="card">
-          <h3>Tutorías Próximas</h3>
+        <label>Materia</label>
+        <select [(ngModel)]="filtroMateria">
+          <option value="Todas">Todas</option>
+          <option value="Matemáticas">Matemáticas</option>
+          <option value="Física">Física</option>
+          <!-- ... -->
+        </select>
 
-          <div class="session-row">
-            <div class="info">
-              <div>
-                Matemáticas con <strong>Dra. Ana Gómez</strong>
-              </div>
-              <div class="muted">
-                24 de Octubre • 10:00 AM
-              </div>
-            </div>
+        <label>Nivel Educativo</label>
+        <select [(ngModel)]="filtroNivel">
+          <option value="Todos">Todos</option>
+          <option value="Bachillerato">Bachillerato</option>
+          <option value="Universidad">Universidad</option>
+        </select>
 
-            <button class="btn join-btn" routerLink="/video-call">
-              Unirse
-            </button>
-          </div>
+        <label>Modalidad</label>
+        <div class="mode-row">
+          <label><input type="checkbox" [(ngModel)]="filtroOnline"> Online</label>
+          <label><input type="checkbox" [(ngModel)]="filtroPresencial"> Presencial</label>
+        </div>
 
-          <div class="session-row">
-            <div class="info">
-              <div>
-                Física con <strong>Prof. Marcos Díaz</strong>
-              </div>
-              <div class="muted">
-                25 de Octubre • 03:00 PM
-              </div>
-            </div>
-
-            <button class="btn join-btn" routerLink="/video-call">
-              Unirse
-            </button>
-          </div>
-        </section>
-
-        <!-- Próximas Sesiones -->
-        <section class="card">
-          <h3>Próximas Sesiones</h3>
-
-          <div class="session-row">
-            <div class="info">
-              <div><strong>Cálculo</strong></div>
-              <div class="muted">
-                Con Andrés López • 18-03-2024 09:00 AM
-              </div>
-            </div>
-
-            <button class="btn join-btn" routerLink="/video-call">
-              Unirse
-            </button>
-          </div>
-
-          <div class="session-row">
-            <div class="info">
-              <div><strong>Historia del Arte</strong></div>
-              <div class="muted">
-                Con Valeria Ruiz • 18-03-2024 03:00 PM
-              </div>
-            </div>
-
-            <button class="btn join-btn" routerLink="/video-call">
-              Unirse
-            </button>
-          </div>
-        </section>
+        <button class="btn-primary">Aplicar filtros</button>
+        <button class="btn-secondary">Limpiar</button>
       </div>
 
-      <!-- Columna derecha: Chat IA -->
-      <aside class="chat-column">
-        <section class="chat-card">
-          <div class="chat-head">
-            <div>
-              <div class="chat-title">Asistente IA</div>
-              <div class="chat-sub">Pregúntame cualquier duda 📘</div>
+      <!-- Lista de tutores/ofertas -->
+      <div class="offers">
+        <h2>Tutores Disponibles para ti</h2>
+        <p>Encontramos {{ ofertasFiltradas.length }} tutores con ofertas activas.</p>
+
+        <div class="offer-grid">
+          <div class="offer-card" *ngFor="let o of ofertasFiltradas">
+            <div class="avatar"></div>
+            <h4>{{ o.tutorName }}</h4>
+            <p class="subject">{{ o.subject }}</p>
+
+            <div class="tags">
+              <span class="tag">{{ o.mode }}</span>
+              <span class="tag">{{ o.status }}</span>
+            </div>
+
+            <div class="price-row">
+              <div>\${{ o.pricePerHour }}/hora · {{ o.hours }}h</div>
+              <button class="btn-small" (click)="reservar(o)" [disabled]="o.status !== 'Disponible'">
+                {{ o.status === 'Disponible' ? 'Reservar' : o.status }}
+              </button>
             </div>
           </div>
 
-          <div class="chat-messages">
-            <div class="msg msg-ai">
-              Hola 👋 Soy tu asistente de estudio.
-              ¿En qué materia necesitas ayuda hoy?
-            </div>
-
-            <div class="msg msg-user">
-              Explícame derivadas como si tuviera 12 años.
-            </div>
-
-            <div class="msg msg-ai">
-              Claro. Una derivada es como medir qué tan rápido
-              está cambiando algo justo en este instante...
-            </div>
+          <div *ngIf="ofertasFiltradas.length === 0" class="empty">
+            No hay ofertas disponibles aún.
           </div>
+        </div>
+      </div>
+    </section>
 
-          <form class="chat-input-row" (submit)="sendMessage($event)">
-            <input
-              class="chat-input"
-              [(ngModel)]="prompt"
-              name="prompt"
-              placeholder="Escribe tu pregunta aquí..."
-            />
-            <button class="btn primary send-btn" type="submit">
-              Enviar
-            </button>
-          </form>
+    <!-- Chatbot flotante -->
+    <button class="chat-fab" (click)="toggleChat()">
+      💬
+    </button>
 
-          <div class="quick-suggestions">
-            <button
-              class="chip"
-              (click)="quickAsk('Dame 5 ejercicios de límites con solución paso a paso.')"
-            >
-              Ejercicios de Límites
-            </button>
+    <div class="chat-panel" *ngIf="showChat">
+      <div class="chat-header">
+        <div>
+          <strong>Asistente Virtual</strong>
+          <div class="status">En línea</div>
+        </div>
+        <button (click)="toggleChat()">✕</button>
+      </div>
 
-            <button
-              class="chip"
-              (click)="quickAsk('Resúmeme la Revolución Francesa en menos de 10 líneas.')"
-            >
-              Historia rápida
-            </button>
+      <div class="chat-body">
+        <div class="msg bot">
+          ¡Hola! Soy tu asistente virtual. ¿Qué materia necesitas hoy?
+        </div>
+        <div class="msg user">
+          Estoy buscando un tutor de matemáticas para bachillerato.
+        </div>
+        <div class="msg bot">
+          Excelente. Usa los filtros de la izquierda para ajustar modalidad y precio.
+        </div>
+      </div>
 
-            <button
-              class="chip"
-              (click)="quickAsk('Explícame cómo usar fórmulas de MRU con ejemplo.')"
-            >
-              Física básica
-            </button>
-          </div>
-        </section>
-      </aside>
+      <div class="chat-input">
+        <input type="text" placeholder="Escribe un mensaje...">
+        <button>➤</button>
+      </div>
     </div>
   </main>
 </div>
